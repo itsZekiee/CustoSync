@@ -1,0 +1,57 @@
+<div class="container mt-4">
+  <h2>{{ isEditMode ? 'Edit' : 'New' }} Customer</h2>
+
+  <form (ngSubmit)="onSubmit()" #customerForm="ngForm">
+    <div class="mb-3">
+      <label for="firstName" class="form-label">First Name *</label>
+      <input
+        type="text"
+        id="firstName"
+        class="form-control"
+        [(ngModel)]="customer.first_name"
+        name="first_name"
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="lastName" class="form-label">Last Name *</label>
+      <input
+        type="text"
+        id="lastName"
+        class="form-control"
+        [(ngModel)]="customer.last_name"
+        name="last_name"
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">Email *</label>
+      <input
+        type="email"
+        id="email"
+        class="form-control"
+        [(ngModel)]="customer.email"
+        name="email"
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="contactNumber" class="form-label">Contact Number</label>
+      <input
+        type="text"
+        id="contactNumber"
+        class="form-control"
+        [(ngModel)]="customer.contact_number"
+        name="contact_number"
+      />
+    </div>
+
+    <button type="submit" class="btn btn-primary" [disabled]="!customerForm.valid">
+      {{ isEditMode ? 'Update' : 'Create' }}
+    </button>
+    <a routerLink="/customers" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>

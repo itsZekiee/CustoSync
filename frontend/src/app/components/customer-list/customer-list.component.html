@@ -1,0 +1,46 @@
+<div class="container mt-4">
+  <h2>Customers</h2>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="input-group">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search by name or email..."
+          [(ngModel)]="searchQuery"
+          (keyup.enter)="onSearch()"
+        />
+        <button class="btn btn-primary" (click)="onSearch()">Search</button>
+      </div>
+    </div>
+    <div class="col-md-6 text-end">
+      <a routerLink="/customers/new" class="btn btn-success">+ New Customer</a>
+    </div>
+  </div>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Contact</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let customer of customers">
+        <td>{{ customer.first_name }} {{ customer.last_name }}</td>
+        <td>{{ customer.email }}</td>
+        <td>{{ customer.contact_number }}</td>
+        <td>
+          <button class="btn btn-sm btn-info me-1" (click)="onView(customer.id!)">View</button>
+          <button class="btn btn-sm btn-warning me-1" (click)="onEdit(customer.id!)">Edit</button>
+          <button class="btn btn-sm btn-danger" (click)="onDelete(customer.id!)">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p *ngIf="customers.length === 0" class="text-muted">No customers found.</p>
+</div>

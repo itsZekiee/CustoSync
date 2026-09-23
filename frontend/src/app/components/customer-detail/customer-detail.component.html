@@ -1,0 +1,17 @@
+<div class="container mt-4" *ngIf="customer">
+  <h2>{{ customer.first_name }} {{ customer.last_name }}</h2>
+
+  <dl class="row">
+    <dt class="col-sm-3">Email</dt>
+    <dd class="col-sm-9">{{ customer.email }}</dd>
+
+    <dt class="col-sm-3">Contact Number</dt>
+    <dd class="col-sm-9">{{ customer.contact_number || '—' }}</dd>
+
+    <dt class="col-sm-3">Created</dt>
+    <dd class="col-sm-9">{{ customer.created_at }}</dd>
+  </dl>
+
+  <button class="btn btn-warning me-2" (click)="onEdit()">Edit</button>
+  <button class="btn btn-secondary" (click)="onBack()">Back to List</button>
+</div>
