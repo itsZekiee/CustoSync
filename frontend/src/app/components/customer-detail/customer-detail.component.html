@@ -1,17 +1,102 @@
-<div class="container mt-4" *ngIf="customer">
-  <h2>{{ customer.first_name }} {{ customer.last_name }}</h2>
+<div class="page-wrapper animate-in">
 
-  <dl class="row">
-    <dt class="col-sm-3">Email</dt>
-    <dd class="col-sm-9">{{ customer.email }}</dd>
+  <div class="back-row">
+    <button class="btn btn-ghost btn-sm" (click)="onBack()">
+      <i class="fa-solid fa-arrow-left"></i> Back to Customers
+    </button>
+  </div>
 
-    <dt class="col-sm-3">Contact Number</dt>
-    <dd class="col-sm-9">{{ customer.contact_number || '—' }}</dd>
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="loading-wrapper">
+    <div class="spinner"></div>
+    <span class="loading-text">Loading customer...</span>
+  </div>
 
-    <dt class="col-sm-3">Created</dt>
-    <dd class="col-sm-9">{{ customer.created_at }}</dd>
-  </dl>
+  <!-- Detail Card -->
+  <div *ngIf="!isLoading && customer" class="detail-page animate-in animate-in-delay-1">
+    <div class="detail-card">
 
-  <button class="btn btn-warning me-2" (click)="onEdit()">Edit</button>
-  <button class="btn btn-secondary" (click)="onBack()">Back to List</button>
+      <!-- Hero -->
+      <div class="detail-hero">
+        <div class="detail-avatar" [style.background]="getAvatarGradient()">
+          {{ getInitials() }}
+        </div>
+        <div>
+          <div class="detail-name">{{ customer.first_name }} {{ customer.last_name }}</div>
+          <div class="detail-meta">Customer #{{ customer.id }}</div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="detail-body">
+        <div class="detail-section-title">Contact Information</div>
+
+        <div class="detail-fields">
+          <div class="detail-field">
+            <div class="detail-field-label">
+              <i class="fa-solid fa-user"></i> First Name
+            </div>
+            <div class="detail-field-value">{{ customer.first_name }}</div>
+          </div>
+
+          <div class="detail-field">
+            <div class="detail-field-label">
+              <i class="fa-solid fa-user"></i> Last Name
+            </div>
+            <div class="detail-field-value">{{ customer.last_name }}</div>
+          </div>
+
+          <div class="detail-field" style="grid-column:1/-1">
+            <div class="detail-field-label">
+              <i class="fa-solid fa-envelope"></i> Email Address
+            </div>
+            <div class="detail-field-value">{{ customer.email }}</div>
+          </div>
+
+          <div class="detail-field">
+            <div class="detail-field-label">
+              <i class="fa-solid fa-phone"></i> Contact Number
+            </div>
+            <div class="detail-field-value" [class.muted]="!customer.contact_number">
+              {{ customer.contact_number || 'Not provided' }}
+            </div>
+          </div>
+
+          <div class="detail-field">
+            <div class="detail-field-label">
+              <i class="fa-solid fa-calendar"></i> Created At
+            </div>
+            <div class="detail-field-value">{{ formatDate(customer.created_at) }}</div>
+          </div>
+
+          <div class="detail-field" style="grid-column:1/-1">
+            <div class="detail-field-label">
+              <i class="fa-solid fa-clock-rotate-left"></i> Last Updated
+            </div>
+            <div class="detail-field-value">{{ formatDate(customer.updated_at) }}</div>
+          </div>
+        </div>
+
+        <div class="detail-actions">
+          <button class="btn btn-ghost" (click)="onBack()">
+            <i class="fa-solid fa-arrow-left"></i> Back
+          </button>
+          <button id="btn-edit-detail" class="btn btn-warning" (click)="onEdit()">
+            <i class="fa-solid fa-pen"></i> Edit Customer
+          </button>
+          <button
+            id="btn-delete-detail"
+            class="btn btn-danger"
+            (click)="onDelete()"
+            [disabled]="isDeleting"
+          >
+            <i class="fa-solid" [ngClass]="isDeleting ? 'fa-circle-notch fa-spin' : 'fa-trash'"></i>
+            {{ isDeleting ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
 </div>

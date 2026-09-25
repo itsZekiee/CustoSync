@@ -1,57 +1,143 @@
-<div class="container mt-4">
-  <h2>{{ isEditMode ? 'Edit' : 'New' }} Customer</h2>
+<div class="page-wrapper animate-in">
 
-  <form (ngSubmit)="onSubmit()" #customerForm="ngForm">
-    <div class="mb-3">
-      <label for="firstName" class="form-label">First Name *</label>
-      <input
-        type="text"
-        id="firstName"
-        class="form-control"
-        [(ngModel)]="customer.first_name"
-        name="first_name"
-        required
-      />
+  <div class="back-row">
+    <a routerLink="/customers" class="btn btn-ghost btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Back to Customers
+    </a>
+  </div>
+
+  <div class="form-page">
+    <div class="form-card">
+
+      <div class="form-card-header">
+        <div class="form-card-title">
+          {{ isEditMode ? 'Edit Customer' : 'New Customer' }}
+        </div>
+        <div class="form-card-subtitle">
+          {{ isEditMode ? 'Update the customer information below.' : 'Fill in the details to add a new customer.' }}
+        </div>
+      </div>
+
+      <!-- API Error -->
+      <div *ngIf="apiError" class="api-error-banner">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ apiError }}</span>
+      </div>
+
+      <form id="customer-form" (ngSubmit)="onSubmit()" #customerForm="ngForm">
+
+        <!-- Name Row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group">
+            <label class="form-label" for="firstName">
+              First Name <span class="required">*</span>
+            </label>
+            <div class="form-control-icon-wrap">
+              <i class="fa-solid fa-user field-icon"></i>
+              <input
+                type="text"
+                id="firstName"
+                class="form-control"
+                placeholder="Jane"
+                [(ngModel)]="customer.first_name"
+                name="first_name"
+                required
+                #fn="ngModel"
+                [class.error]="fn.invalid && fn.touched"
+              />
+            </div>
+            <div *ngIf="fn.invalid && fn.touched" class="form-error">
+              <i class="fa-solid fa-circle-exclamation"></i> First name is required
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="lastName">
+              Last Name <span class="required">*</span>
+            </label>
+            <div class="form-control-icon-wrap">
+              <i class="fa-solid fa-user field-icon"></i>
+              <input
+                type="text"
+                id="lastName"
+                class="form-control"
+                placeholder="Doe"
+                [(ngModel)]="customer.last_name"
+                name="last_name"
+                required
+                #ln="ngModel"
+                [class.error]="ln.invalid && ln.touched"
+              />
+            </div>
+            <div *ngIf="ln.invalid && ln.touched" class="form-error">
+              <i class="fa-solid fa-circle-exclamation"></i> Last name is required
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">
+            Email Address <span class="required">*</span>
+          </label>
+          <div class="form-control-icon-wrap">
+            <i class="fa-solid fa-envelope field-icon"></i>
+            <input
+              type="email"
+              id="email"
+              class="form-control"
+              placeholder="jane@example.com"
+              [(ngModel)]="customer.email"
+              name="email"
+              required
+              email
+              #em="ngModel"
+              [class.error]="em.invalid && em.touched"
+            />
+          </div>
+          <div *ngIf="em.invalid && em.touched" class="form-error">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            {{ em.errors?.['required'] ? 'Email is required' : 'Enter a valid email address' }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contactNumber">Contact Number</label>
+          <div class="form-control-icon-wrap">
+            <i class="fa-solid fa-phone field-icon"></i>
+            <input
+              type="text"
+              id="contactNumber"
+              class="form-control"
+              placeholder="+1 234 567 8900"
+              [(ngModel)]="customer.contact_number"
+              name="contact_number"
+            />
+          </div>
+        </div>
+
+        <hr class="form-divider" />
+
+        <div class="form-actions">
+          <a routerLink="/customers" class="btn btn-ghost">
+            <i class="fa-solid fa-xmark"></i> Cancel
+          </a>
+          <button
+            id="btn-submit"
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="customerForm.invalid || isSubmitting"
+          >
+            <span *ngIf="!isSubmitting">
+              <i class="fa-solid" [ngClass]="isEditMode ? 'fa-floppy-disk' : 'fa-plus'"></i>
+              {{ isEditMode ? 'Update Customer' : 'Create Customer' }}
+            </span>
+            <span *ngIf="isSubmitting">
+              <i class="fa-solid fa-circle-notch fa-spin"></i> Saving...
+            </span>
+          </button>
+        </div>
+
+      </form>
     </div>
-
-    <div class="mb-3">
-      <label for="lastName" class="form-label">Last Name *</label>
-      <input
-        type="text"
-        id="lastName"
-        class="form-control"
-        [(ngModel)]="customer.last_name"
-        name="last_name"
-        required
-      />
-    </div>
-
-    <div class="mb-3">
-      <label for="email" class="form-label">Email *</label>
-      <input
-        type="email"
-        id="email"
-        class="form-control"
-        [(ngModel)]="customer.email"
-        name="email"
-        required
-      />
-    </div>
-
-    <div class="mb-3">
-      <label for="contactNumber" class="form-label">Contact Number</label>
-      <input
-        type="text"
-        id="contactNumber"
-        class="form-control"
-        [(ngModel)]="customer.contact_number"
-        name="contact_number"
-      />
-    </div>
-
-    <button type="submit" class="btn btn-primary" [disabled]="!customerForm.valid">
-      {{ isEditMode ? 'Update' : 'Create' }}
-    </button>
-    <a routerLink="/customers" class="btn btn-secondary ms-2">Cancel</a>
-  </form>
+  </div>
 </div>

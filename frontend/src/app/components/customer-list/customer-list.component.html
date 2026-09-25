@@ -1,46 +1,435 @@
-<div class="container mt-4">
-  <h2>Customers</h2>
+<div class="page-content anim">
 
-  <div class="row mb-3">
-    <div class="col-md-6">
-      <div class="input-group">
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Search by name or email..."
-          [(ngModel)]="searchQuery"
-          (keyup.enter)="onSearch()"
-        />
-        <button class="btn btn-primary" (click)="onSearch()">Search</button>
+  <!-- ╔══════════════════════════════════════════════════════════════════
+       STATS ROW
+  ══════════════════════════════════════════════════════════════════════╗ -->
+  <div class="stats-grid anim anim-d1">
+
+    <div class="stat-card indigo">
+      <div class="stat-card-top">
+        <div class="stat-card-label">Total Customers</div>
+        <div class="stat-card-icon"><i class="fa-solid fa-users"></i></div>
+      </div>
+      <div class="stat-card-value">{{ totalCustomers }}</div>
+      <div class="stat-card-trend">
+        <i class="fa-solid fa-arrow-trend-up"></i>
+        All time records
       </div>
     </div>
-    <div class="col-md-6 text-end">
-      <a routerLink="/customers/new" class="btn btn-success">+ New Customer</a>
+
+    <div class="stat-card green">
+      <div class="stat-card-top">
+        <div class="stat-card-label">New This Week</div>
+        <div class="stat-card-icon"><i class="fa-solid fa-user-plus"></i></div>
+      </div>
+      <div class="stat-card-value">{{ recentCustomers }}</div>
+      <div class="stat-card-trend">
+        <i class="fa-solid fa-clock"></i>
+        Last 7 days
+      </div>
+    </div>
+
+    <div class="stat-card blue">
+      <div class="stat-card-top">
+        <div class="stat-card-label">Search Results</div>
+        <div class="stat-card-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+      </div>
+      <div class="stat-card-value">{{ filtered.length }}</div>
+      <div class="stat-card-trend neutral">
+        <i class="fa-solid fa-filter"></i>
+        {{ searchQuery ? '"' + searchQuery + '"' : 'No filter active' }}
+      </div>
+    </div>
+
+    <div class="stat-card purple">
+      <div class="stat-card-top">
+        <div class="stat-card-label">Database</div>
+        <div class="stat-card-icon"><i class="fa-solid fa-database"></i></div>
+      </div>
+      <div class="stat-card-value" style="font-size:1.1rem;letter-spacing:0">CustoSync_db</div>
+      <div class="stat-card-trend">
+        <i class="fa-solid fa-circle" style="font-size:0.4rem"></i>
+        MySQL · XAMPP
+      </div>
     </div>
   </div>
 
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Contact</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let customer of customers">
-        <td>{{ customer.first_name }} {{ customer.last_name }}</td>
-        <td>{{ customer.email }}</td>
-        <td>{{ customer.contact_number }}</td>
-        <td>
-          <button class="btn btn-sm btn-info me-1" (click)="onView(customer.id!)">View</button>
-          <button class="btn btn-sm btn-warning me-1" (click)="onEdit(customer.id!)">Edit</button>
-          <button class="btn btn-sm btn-danger" (click)="onDelete(customer.id!)">Delete</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- ╔══════════════════════════════════════════════════════════════════
+       CUSTOMER TABLE
+  ══════════════════════════════════════════════════════════════════════╗ -->
+  <div class="table-card anim anim-d2">
 
-  <p *ngIf="customers.length === 0" class="text-muted">No customers found.</p>
+    <!-- Section Header -->
+    <div class="section-header" style="padding:18px 20px 0">
+      <div class="section-title">
+        <i class="fa-solid fa-table-list" style="color:var(--accent)"></i>
+        Customer Records
+        <span class="count-badge">{{ filtered.length }}</span>
+      </div>
+      <div class="section-controls">
+        <!-- Search -->
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass si"></i>
+          <input
+            id="search-customers"
+            type="text"
+            class="search-input"
+            placeholder="Search name, email..."
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="applyFilter()"
+          />
+        </div>
+        <!-- Add Customer -->
+        <button id="btn-add-customer" class="btn btn-primary" (click)="openCreate()">
+          <i class="fa-solid fa-plus"></i> Add Customer
+        </button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap" style="margin-top:16px">
+      <table>
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Email Address</th>
+            <th>Contact Number</th>
+            <th>Status</th>
+            <th>Joined</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Loading -->
+          <tr *ngIf="isLoading" class="loading-row">
+            <td colspan="6">
+              <div class="spinner"></div>
+              <p style="color:var(--text-3);font-size:0.85rem">Loading customers...</p>
+            </td>
+          </tr>
+
+          <!-- Error -->
+          <tr *ngIf="hasError && !isLoading">
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-icon" style="color:var(--red)"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="empty-title">Cannot connect to API</div>
+                <p class="empty-desc">Make sure XAMPP Apache is running and the PHP API is deployed.</p>
+                <button class="btn btn-ghost" (click)="load()">
+                  <i class="fa-solid fa-rotate-right"></i> Retry
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty -->
+          <tr *ngIf="!isLoading && !hasError && filtered.length === 0">
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-user-slash"></i></div>
+                <div class="empty-title">{{ searchQuery ? 'No results found' : 'No customers yet' }}</div>
+                <p class="empty-desc">
+                  {{ searchQuery ? 'Try a different search term.' : 'Add your first customer using the button above.' }}
+                </p>
+                <button *ngIf="searchQuery" class="btn btn-ghost" (click)="clearSearch()">
+                  <i class="fa-solid fa-xmark"></i> Clear Search
+                </button>
+                <button *ngIf="!searchQuery" class="btn btn-primary" (click)="openCreate()">
+                  <i class="fa-solid fa-plus"></i> Add Customer
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Rows -->
+          <tr
+            *ngFor="let c of filtered"
+            (click)="openPanel(c)"
+          >
+            <td>
+              <div class="cell-user">
+                <div class="tbl-avatar" [style.background]="avatarGradient(c.id)">
+                  {{ initials(c) }}
+                </div>
+                <div class="avatar-info">
+                  <div class="a-name">{{ c.first_name }} {{ c.last_name }}</div>
+                  <div class="a-id">#{{ c.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span style="display:flex;align-items:center;gap:7px">
+                <i class="fa-solid fa-envelope" style="color:var(--text-3);font-size:0.75rem"></i>
+                {{ c.email }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="c.contact_number" style="display:flex;align-items:center;gap:7px">
+                <i class="fa-solid fa-phone" style="color:var(--text-3);font-size:0.75rem"></i>
+                {{ c.contact_number }}
+              </span>
+              <span *ngIf="!c.contact_number" style="color:var(--text-3);font-style:italic;font-size:0.8rem">—</span>
+            </td>
+            <td>
+              <span class="tag tag-active">
+                <i class="fa-solid fa-circle" style="font-size:0.4rem"></i> Active
+              </span>
+            </td>
+            <td style="white-space:nowrap">{{ formatDate(c.created_at) }}</td>
+            <td>
+              <div class="row-actions" style="justify-content:flex-end" (click)="$event.stopPropagation()">
+                <button class="btn btn-sm btn-info btn-icon" title="View" (click)="openPanel(c)">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-warning btn-icon" title="Edit" (click)="openEdit(c, $event)">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="btn btn-sm btn-danger btn-icon" title="Delete" (click)="promptDelete(c, $event)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table Footer -->
+    <div *ngIf="!isLoading && !hasError && filtered.length > 0" class="table-footer">
+      <span class="table-footer-info">
+        Showing <strong>{{ filtered.length }}</strong> of <strong>{{ totalCustomers }}</strong> customers
+      </span>
+      <span class="table-footer-info" *ngIf="searchQuery">
+        Filtered by: <strong>"{{ searchQuery }}"</strong>
+        <button class="btn btn-xs btn-ghost" style="margin-left:8px" (click)="clearSearch()">
+          <i class="fa-solid fa-xmark"></i> Clear
+        </button>
+      </span>
+    </div>
+
+  </div><!-- /table-card -->
+</div>
+
+
+<!-- ╔══════════════════════════════════════════════════════════════════════
+     CREATE / EDIT MODAL
+════════════════════════════════════════════════════════════════════════╗ -->
+<div class="modal-overlay" *ngIf="modalMode" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon" [ngClass]="modalMode === 'create' ? 'create' : 'edit'">
+          <i class="fa-solid" [ngClass]="modalMode === 'create' ? 'fa-user-plus' : 'fa-pen'"></i>
+        </div>
+        <div>
+          <div class="modal-title">{{ modalMode === 'create' ? 'Add New Customer' : 'Edit Customer' }}</div>
+          <div class="modal-subtitle">
+            {{ modalMode === 'create' ? 'Fill in the details below to create a new record.' : 'Update the customer\'s information.' }}
+          </div>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- API Error -->
+      <div *ngIf="modalError" class="api-error">
+        <i class="fa-solid fa-circle-exclamation"></i> {{ modalError }}
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name <span class="req">*</span></label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-user input-icon"></i>
+            <input id="modal-first-name" type="text" class="form-control with-icon" placeholder="Jane"
+                   [(ngModel)]="form.first_name" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name <span class="req">*</span></label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-user input-icon"></i>
+            <input id="modal-last-name" type="text" class="form-control with-icon" placeholder="Doe"
+                   [(ngModel)]="form.last_name" required />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address <span class="req">*</span></label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-envelope input-icon"></i>
+          <input id="modal-email" type="email" class="form-control with-icon" placeholder="jane@example.com"
+                 [(ngModel)]="form.email" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Contact Number</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-phone input-icon"></i>
+          <input id="modal-contact" type="text" class="form-control with-icon" placeholder="+1 234 567 8900"
+                 [(ngModel)]="form.contact_number" />
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" (click)="closeModal()">
+        <i class="fa-solid fa-xmark"></i> Cancel
+      </button>
+      <button
+        id="modal-submit"
+        class="btn btn-primary"
+        (click)="submitForm()"
+        [disabled]="modalSubmitting || !form.first_name || !form.last_name || !form.email"
+      >
+        <i class="fa-solid" [ngClass]="modalSubmitting ? 'fa-circle-notch fa-spin' : (modalMode === 'create' ? 'fa-plus' : 'fa-floppy-disk')"></i>
+        {{ modalSubmitting ? 'Saving...' : (modalMode === 'create' ? 'Create Customer' : 'Update Customer') }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ╔══════════════════════════════════════════════════════════════════════
+     DELETE CONFIRM MODAL
+════════════════════════════════════════════════════════════════════════╗ -->
+<div class="modal-overlay" *ngIf="confirmTarget" (click)="cancelDelete()">
+  <div class="modal confirm-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-body" style="text-align:center;padding-top:28px">
+      <div class="confirm-icon">
+        <i class="fa-solid fa-trash"></i>
+      </div>
+      <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:8px">Delete Customer?</h3>
+      <p style="color:var(--text-3);font-size:0.875rem;margin-bottom:0">
+        You're about to permanently delete
+        <strong style="color:var(--text-1)">{{ confirmTarget?.first_name }} {{ confirmTarget?.last_name }}</strong>.
+        This action cannot be undone.
+      </p>
+    </div>
+
+    <div class="modal-footer" style="justify-content:center;gap:12px">
+      <button class="btn btn-ghost" (click)="cancelDelete()">
+        <i class="fa-solid fa-xmark"></i> Cancel
+      </button>
+      <button id="btn-confirm-delete" class="btn btn-danger" (click)="confirmDelete()" [disabled]="isDeleting">
+        <i class="fa-solid" [ngClass]="isDeleting ? 'fa-circle-notch fa-spin' : 'fa-trash'"></i>
+        {{ isDeleting ? 'Deleting...' : 'Yes, Delete' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ╔══════════════════════════════════════════════════════════════════════
+     DETAIL SIDE PANEL
+════════════════════════════════════════════════════════════════════════╗ -->
+<ng-container *ngIf="showPanel && selectedCustomer">
+  <div class="detail-panel-overlay" (click)="closePanel()"></div>
+  <div class="detail-panel">
+
+    <!-- Panel Header -->
+    <div class="panel-header">
+      <span style="font-size:0.85rem;font-weight:600;color:var(--text-2)">
+        <i class="fa-solid fa-user" style="margin-right:6px;color:var(--accent)"></i>
+        Customer Profile
+      </span>
+      <button class="modal-close" (click)="closePanel()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Hero -->
+    <div class="panel-hero">
+      <div class="panel-avatar" [style.background]="avatarGradient(selectedCustomer.id)">
+        {{ initials(selectedCustomer) }}
+      </div>
+      <div class="panel-name">{{ selectedCustomer.first_name }} {{ selectedCustomer.last_name }}</div>
+      <div class="panel-sub">Customer #{{ selectedCustomer.id }}</div>
+      <div style="margin-top:10px">
+        <span class="tag tag-active" style="font-size:0.7rem">
+          <i class="fa-solid fa-circle" style="font-size:0.35rem"></i> Active
+        </span>
+      </div>
+    </div>
+
+    <!-- Fields -->
+    <div class="panel-body">
+      <div class="panel-section-title">Contact Information</div>
+
+      <div class="panel-field">
+        <div class="panel-field-icon"><i class="fa-solid fa-envelope"></i></div>
+        <div>
+          <div class="panel-field-label">Email Address</div>
+          <div class="panel-field-value">{{ selectedCustomer.email }}</div>
+        </div>
+      </div>
+
+      <div class="panel-field">
+        <div class="panel-field-icon"><i class="fa-solid fa-phone"></i></div>
+        <div>
+          <div class="panel-field-label">Contact Number</div>
+          <div class="panel-field-value" [ngClass]="{'empty': !selectedCustomer.contact_number}">
+            {{ selectedCustomer.contact_number || 'Not provided' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section-title" style="margin-top:20px">Record Details</div>
+
+      <div class="panel-field">
+        <div class="panel-field-icon"><i class="fa-solid fa-hashtag"></i></div>
+        <div>
+          <div class="panel-field-label">Customer ID</div>
+          <div class="panel-field-value">#{{ selectedCustomer.id }}</div>
+        </div>
+      </div>
+
+      <div class="panel-field">
+        <div class="panel-field-icon"><i class="fa-solid fa-calendar-plus"></i></div>
+        <div>
+          <div class="panel-field-label">Created</div>
+          <div class="panel-field-value">{{ formatDate(selectedCustomer.created_at) }}</div>
+        </div>
+      </div>
+
+      <div class="panel-field">
+        <div class="panel-field-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <div>
+          <div class="panel-field-label">Last Updated</div>
+          <div class="panel-field-value">{{ formatDate(selectedCustomer.updated_at) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Actions -->
+    <div class="panel-actions">
+      <button class="btn btn-warning" (click)="openEdit(selectedCustomer)">
+        <i class="fa-solid fa-pen"></i> Edit
+      </button>
+      <button class="btn btn-danger" (click)="promptDelete(selectedCustomer)">
+        <i class="fa-solid fa-trash"></i> Delete
+      </button>
+    </div>
+
+  </div>
+</ng-container>
+
+
+<!-- ╔══════════════════════════════════════════════════════════════════════
+     TOAST NOTIFICATIONS
+════════════════════════════════════════════════════════════════════════╗ -->
+<div class="toast-container">
+  <div *ngFor="let t of toasts" class="toast" [ngClass]="t.type">
+    <i class="fa-solid toast-icon" [ngClass]="[t.type, t.type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark']"></i>
+    <span class="toast-msg">{{ t.message }}</span>
+  </div>
 </div>
